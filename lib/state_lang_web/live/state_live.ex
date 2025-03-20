@@ -2,7 +2,7 @@ defmodule StateLangWeb.StateLive do
   # use StateLangWeb, :live_view
   import FSMLiveGenerator
 
-  generate_liveview(%{
+  prog = %{
     "components" => [
       %{
         "name" => "Increment",
@@ -18,13 +18,21 @@ defmodule StateLangWeb.StateLive do
         "name" => "Decrement",
         "transition" => "subtraction",
         "type" => "button"
+      },
+      %{
+        "name" => "Add num",
+        "transition" => "add_num",
+        "type" => "button"
       }
     ],
-    "initial_state" => %{"count" => 0, "name" => "initial_state"},
+    "initial_state" => %{"count" => 0, "num" => 0, "name" => "initial_state"},
     "transitions" => [
-      {"addition", "state.count + 1"},
-      {"double_addition", "state.count + 2"},
-      {"subtraction", "state.count - 1"}
+      {"addition", "count", "+ 1"},
+      {"double_addition", "count", " + 2"},
+      {"subtraction", "count", "- 1"},
+      {"add_num", "num", "+ 1"}
     ]
-  })
+  }
+
+  generate_liveview(prog)
 end

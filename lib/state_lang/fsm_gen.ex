@@ -17,9 +17,9 @@ defmodule FSMLiveGenerator do
         {:ok, assign(socket, state: @initial_state, components: @components)}
       end
 
-      for {transition_name, expression} <- @transitions do
+      for {transition_name, state_key, expression} <- @transitions do
         def handle_event(unquote(transition_name), _params, socket) do
-          new_state = update_state(socket.assigns.state, unquote(expression))
+          new_state = update_state(socket.assigns.state, unquote(state_key), unquote(expression))
           {:noreply, assign(socket, state: new_state)}
         end
       end
@@ -28,6 +28,7 @@ defmodule FSMLiveGenerator do
         ~H"""
         <div>
           <p>Current Count: {@state.count}</p>
+          <p>Current Num: {@state.num}</p>
           <%= for comp <- @components do %>
             <button phx-click={comp["transition"]}>
               {comp["name"]}
@@ -37,11 +38,11 @@ defmodule FSMLiveGenerator do
         """
       end
 
-      defp update_state(state, expr) do
+      defp update_state(state, state_key, expr) do
         binding = [state: state]
-        {result, _} = Code.eval_string(expr, binding)
+        {result, _} = Code.eval_string("state.#{state_key} #{expr}", binding)
 
-        Map.put(state, :count, result)
+        Map.put(state, String.to_atom(state_key), result)
       end
     end
   end
