@@ -1,0 +1,22 @@
+{
+  "initial_state": {
+    "name": "initial_state",
+    "count": 0
+  },
+  "transitions": {
+    "addition": "state.count + 1",
+    "subtraction": "state.count - 1"
+  },
+  "components": {
+    "addition": {
+      "name": "Increment",
+      "type": "button",
+      "transition": "addition"
+    },
+    "subtraction": {
+      "name": "Decrement",
+      "type": "button",
+      "transition": "subtraction"
+    }
+  }
+}
