@@ -17,7 +17,8 @@ defmodule FSMLiveGenerator do
            state: @initial_state,
            inputs: @inputs,
            outputs: @outputs,
-           module: @module
+           module: @module,
+           events: []
          )}
       end
 
@@ -27,7 +28,21 @@ defmodule FSMLiveGenerator do
           state = socket.assigns.state
 
           new_state = apply(@module, unquote(transition_atom), [state, params])
-          {:noreply, assign(socket, state: new_state)}
+
+          events =
+            [
+              "Pre-state: " <> Jason.encode!(state),
+              unquote(transition_name) <> " params: " <> Jason.encode!(params),
+              "Post-state: " <> Jason.encode!(new_state),
+              "---------------"
+            ]
+            |> Enum.reverse()
+
+          {:noreply,
+           assign(socket,
+             state: new_state,
+             events: events ++ socket.assigns.events
+           )}
         end
       end
 
@@ -57,6 +72,12 @@ defmodule FSMLiveGenerator do
                 </.button>
             <% end %>
           <% end %>
+          <h1>Events:</h1>
+          <ul>
+            <%= for event <- @events do %>
+              <li>{event}</li>
+            <% end %>
+          </ul>
         </div>
         """
       end
