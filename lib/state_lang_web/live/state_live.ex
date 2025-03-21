@@ -1,30 +1,9 @@
 defmodule StateLangWeb.StateLive do
-  # use StateLangWeb, :live_view
   import FSMLiveGenerator
+  alias StateLang.States.StateTest
 
-  generate_liveview(%{
-    "components" => [
-      %{
-        "name" => "Increment",
-        "transition" => "addition",
-        "type" => "button"
-      },
-      %{
-        "name" => "Double Increment",
-        "transition" => "double_addition",
-        "type" => "button"
-      },
-      %{
-        "name" => "Decrement",
-        "transition" => "subtraction",
-        "type" => "button"
-      }
-    ],
-    "initial_state" => %{"count" => 0, "name" => "initial_state"},
-    "transitions" => [
-      {"addition", "state.count + 1"},
-      {"double_addition", "state.count + 2"},
-      {"subtraction", "state.count - 1"}
-    ]
-  })
+  # https://www.erlang.org/docs/23/design_principles/statem#event-driven-state-machines
+  # State(S) x Event(E) -> Actions(A), State(S')
+
+  StateTest.state_machine() |> generate_liveview()
 end
