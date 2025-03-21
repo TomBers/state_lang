@@ -1,6 +1,5 @@
 defmodule StateLang.States.Todo do
   @state %{"todos" => []}
-
   # State funcs
   def add_note(state, params), do: %{state | todos: state.todos ++ [Map.get(params, "Todo")]}
   # Output funcs

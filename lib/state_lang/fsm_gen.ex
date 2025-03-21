@@ -63,8 +63,7 @@ defmodule FSMLiveGenerator do
                     class={comp["style"]}
                     value={@state[comp["name"]]}
                     placeholder={comp["name"]}
-                  >
-                  </.input>
+                  />
                 </.simple_form>
               <% _ -> %>
                 <.button phx-click={comp["transition"]} class={comp["style"]}>
