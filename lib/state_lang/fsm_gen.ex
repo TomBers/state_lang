@@ -1,25 +1,29 @@
 defmodule FSMLiveGenerator do
-  defmacro generate_liveview(json) do
-    quote bind_quoted: [json: json] do
+  defmacro generate_liveview(prog) do
+    quote bind_quoted: [prog: prog] do
       use StateLangWeb, :live_view
 
-      @initial_state json["initial_state"]
+      @initial_state prog["initial_state"]
                      |> Enum.map(fn {key, value} -> {String.to_atom(key), value} end)
                      |> Map.new()
+      @module prog["module"]
       IO.inspect(@initial_state, label: "Initial state")
 
-      @transitions json["transitions"]
+      @transitions prog["transitions"]
+
       IO.inspect(@transitions, label: "@transitions")
-      @components json["components"]
+      @components prog["components"]
       IO.inspect(@components, label: "@components")
 
       def mount(_params, _session, socket) do
         {:ok, assign(socket, state: @initial_state, components: @components)}
       end
 
-      for {transition_name, state_key, expression} <- @transitions do
+      for {transition_name, transition_atom} <- @transitions do
         def handle_event(unquote(transition_name), _params, socket) do
-          new_state = update_state(socket.assigns.state, unquote(state_key), unquote(expression))
+          state = socket.assigns.state
+          # Call named function from TransitionFunctions module
+          new_state = apply(@module, unquote(transition_atom), [state])
           {:noreply, assign(socket, state: new_state)}
         end
       end
@@ -30,19 +34,12 @@ defmodule FSMLiveGenerator do
           <p>Current Count: {@state.count}</p>
           <p>Current Num: {@state.num}</p>
           <%= for comp <- @components do %>
-            <button phx-click={comp["transition"]}>
+            <.button phx-click={comp["transition"]} class={comp["style"]}>
               {comp["name"]}
-            </button>
+            </.button>
           <% end %>
         </div>
         """
-      end
-
-      defp update_state(state, state_key, expr) do
-        binding = [state: state]
-        {result, _} = Code.eval_string("state.#{state_key} #{expr}", binding)
-
-        Map.put(state, String.to_atom(state_key), result)
       end
     end
   end
