@@ -14,15 +14,18 @@ defmodule StateLang.States.StateTest do
   def set_title(state, params),
     do: %{state | name: Map.get(params, "Text Inout") <> " #{state.count + state.num}"}
 
+  def add_note(state, params), do: %{state | notes: state.notes ++ [Map.get(params, "Todo")]}
+
   # Output functions
   def title_state(state), do: state.name
   def count_state(state), do: state.count
   def num_state(state), do: state.num
   def total_state(state), do: state.count + state.num
+  def todo_state(state), do: Enum.join(state.notes, ", ")
 
   def state_machine do
     %{
-      "initial_state" => %{"count" => 0, "num" => 0, "name" => "initial_state"},
+      "initial_state" => %{"count" => 0, "num" => 0, "name" => "initial_state", "notes" => []},
       "module" => __MODULE__,
       "inputs" => [
         %{
@@ -60,6 +63,11 @@ defmodule StateLang.States.StateTest do
           "transition" => "set_title",
           "type" => "text",
           "style" => @btn_style
+        },
+        %{
+          "name" => "Todo",
+          "transition" => "add_note",
+          "type" => "text"
         }
       ],
       "outputs" => [
@@ -78,6 +86,11 @@ defmodule StateLang.States.StateTest do
           "Total",
           "text",
           :total_state
+        },
+        {
+          "Todos",
+          "list",
+          :todo_state
         }
       ],
       "transitions" => [
@@ -86,7 +99,8 @@ defmodule StateLang.States.StateTest do
         {"subtraction", :subtraction},
         {"add_num", :add_num},
         {"reset", :reset},
-        {"set_title", :set_title}
+        {"set_title", :set_title},
+        {"add_note", :add_note}
       ]
     }
   end

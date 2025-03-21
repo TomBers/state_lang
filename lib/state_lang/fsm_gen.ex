@@ -47,6 +47,7 @@ defmodule FSMLiveGenerator do
                     name={comp["name"]}
                     class={comp["style"]}
                     value={@state[comp["name"]]}
+                    placeholder={comp["name"]}
                   >
                   </.input>
                 </.simple_form>
