@@ -7,23 +7,26 @@ defmodule FSMLiveGenerator do
                      |> Enum.map(fn {key, value} -> {String.to_atom(key), value} end)
                      |> Map.new()
       @module prog["module"]
-      IO.inspect(@initial_state, label: "Initial state")
-
       @transitions prog["transitions"]
-
-      IO.inspect(@transitions, label: "@transitions")
-      @components prog["components"]
-      IO.inspect(@components, label: "@components")
+      @inputs prog["inputs"]
+      @outputs prog["outputs"]
 
       def mount(_params, _session, socket) do
-        {:ok, assign(socket, state: @initial_state, components: @components)}
+        {:ok,
+         assign(socket,
+           state: @initial_state,
+           inputs: @inputs,
+           outputs: @outputs,
+           module: @module
+         )}
       end
 
       for {transition_name, transition_atom} <- @transitions do
-        def handle_event(unquote(transition_name), _params, socket) do
+        def handle_event(unquote(transition_name), params, socket) do
+          IO.inspect(params, label: "Params")
           state = socket.assigns.state
-          # Call named function from TransitionFunctions module
-          new_state = apply(@module, unquote(transition_atom), [state])
+
+          new_state = apply(@module, unquote(transition_atom), [state, params])
           {:noreply, assign(socket, state: new_state)}
         end
       end
@@ -31,12 +34,27 @@ defmodule FSMLiveGenerator do
       def render(var!(assigns)) do
         ~H"""
         <div>
-          <p>Current Count: {@state.count}</p>
-          <p>Current Num: {@state.num}</p>
-          <%= for comp <- @components do %>
-            <.button phx-click={comp["transition"]} class={comp["style"]}>
-              {comp["name"]}
-            </.button>
+          <%= for {name, _type, state_fn} <- @outputs do %>
+            <p>{name}</p>
+            <p>{apply(@module, state_fn, [@state])}</p>
+          <% end %>
+          <%= for comp <- @inputs do %>
+            <%= case comp["type"] do %>
+              <% "text" -> %>
+                <.simple_form for={%{}} phx-submit={comp["transition"]}>
+                  <.input
+                    type="text"
+                    name={comp["name"]}
+                    class={comp["style"]}
+                    value={@state[comp["name"]]}
+                  >
+                  </.input>
+                </.simple_form>
+              <% _ -> %>
+                <.button phx-click={comp["transition"]} class={comp["style"]}>
+                  {comp["name"]}
+                </.button>
+            <% end %>
           <% end %>
         </div>
         """
