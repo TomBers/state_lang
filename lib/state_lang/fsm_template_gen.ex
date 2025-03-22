@@ -8,15 +8,11 @@ defmodule FSMTemplateGenerator do
                      |> Map.new()
       @module prog["module"]
       @transitions prog["transitions"]
-      @inputs prog["inputs"]
-      @outputs prog["outputs"]
 
       def mount(_params, _session, socket) do
         {:ok,
          assign(socket,
            state: @initial_state,
-           inputs: @inputs,
-           outputs: @outputs,
            module: @module,
            events: []
          )}

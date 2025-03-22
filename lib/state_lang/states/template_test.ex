@@ -16,28 +16,16 @@ defmodule StateLang.States.TemplateTest do
   def render(assigns) do
     ~H"""
     <div>
-      <%= for {name, _type, state_fn} <- @outputs do %>
-        <p class="output-name">{name}</p>
-        <p class="output-value">{apply(@module, state_fn, [@state])}</p>
-      <% end %>
-      <%= for comp <- @inputs do %>
-        <%= case comp["type"] do %>
-          <% "text" -> %>
-            <.simple_form for={%{}} phx-submit={comp["transition"]}>
-              <.input
-                type="text"
-                name={comp["name"]}
-                class={comp["style"]}
-                value={@state[comp["name"]]}
-                placeholder={comp["name"]}
-              />
-            </.simple_form>
-          <% _ -> %>
-            <.button phx-click={comp["transition"]} class={comp["style"]}>
-              {comp["name"]}
-            </.button>
-        <% end %>
-      <% end %>
+      <p class="output-name">Current State:</p>
+      <p class="output-value">{apply(@module, :output_state, [@state])}</p>
+
+      <.button
+        phx-click="change_state"
+        class="rounded-md bg-black-800 py-2 px-4 mb-4 border border-transparent text-center text-sm transition-all shadow-md hover:shadow-lg focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2"
+      >
+        Change State
+      </.button>
+
       <div class="events-container">
         <h1>Events:</h1>
         <ul>
@@ -54,22 +42,6 @@ defmodule StateLang.States.TemplateTest do
     %{
       "initial_state" => @state,
       "module" => __MODULE__,
-      "inputs" => [
-        %{
-          "name" => "Change State",
-          "transition" => "change_state",
-          "type" => "button",
-          "style" =>
-            "rounded-md bg-black-800 py-2 px-4 mb-4 border border-transparent text-center text-sm transition-all shadow-md hover:shadow-lg focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2"
-        }
-      ],
-      "outputs" => [
-        {
-          "Output",
-          "text",
-          :output_state
-        }
-      ],
       "transitions" => [
         {"change_state", :change_state}
       ]
