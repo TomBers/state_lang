@@ -1,7 +1,7 @@
 defmodule StateLang.States.TemplateTest do
   use StateLangWeb, :live_view
 
-  @state %{output: "Red", cycles: 0}
+  @state %{output: "Red", cycles: 0, count: 0}
 
   # State Red -> Orange -> Green -> Red * 5 then End
   # State transition functions
@@ -9,12 +9,18 @@ defmodule StateLang.States.TemplateTest do
   def change_state(%{output: "Red"} = state, _), do: %{state | output: "Orange"}
   def change_state(%{output: "Orange"} = state, _), do: %{state | output: "Yellow"}
   def change_state(%{output: "Yellow"} = state, _), do: %{state | output: "Green"}
-  def change_state(%{output: "Green"} = state, _), do: %{output: "Red", cycles: state.cycles + 1}
 
+  def change_state(%{output: "Green"} = state, _),
+    do: %{state | output: "Red", cycles: state.cycles + 1}
+
+  # Message recieved function
   def message_call(state, _), do: state
 
+  # Timer function
+  def timer(state), do: %{state | count: state.count + 1}
+
   # Output function
-  def output_state(state), do: "#{state.output} [cycles: #{state.cycles}]"
+  def output_state(state), do: "#{state.output} [cycles: #{state.cycles}] count: #{state.count}"
 
   def render(assigns) do
     ~H"""
@@ -47,7 +53,8 @@ defmodule StateLang.States.TemplateTest do
       module: __MODULE__,
       transitions: [
         "change_state"
-      ]
+      ],
+      timer_interval: 2000
     }
   end
 end

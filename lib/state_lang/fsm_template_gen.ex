@@ -7,10 +7,12 @@ defmodule FSMTemplateGenerator do
       @initial_state prog.initial_state
       @module prog.module
       @transitions prog.transitions
+      @timer_interval prog.timer_interval
 
       def mount(_params, _session, socket) do
         if connected?(socket) do
           PubSub.subscribe(StateLang.PubSub, "#{@module}")
+          :timer.send_interval(@timer_interval, self(), :tick)
         end
 
         {:ok,
@@ -46,8 +48,19 @@ defmodule FSMTemplateGenerator do
       def handle_info({:message, params}, socket) do
         new_state = apply(@module, :message_call, [socket.assigns.state, params])
 
-        {:noreply,
-         assign(socket, state: new_state, events: ["MSG RECIEVED" | socket.assigns.events])}
+        events = [
+          "---------------",
+          "Post-state: " <> Jason.encode!(new_state),
+          "MSG RECIEVED params: " <> Jason.encode!(params),
+          "Pre-state: " <> Jason.encode!(socket.assigns.state)
+        ]
+
+        {:noreply, assign(socket, state: new_state, events: events ++ socket.assigns.events)}
+      end
+
+      def handle_info(:tick, socket) do
+        new_state = apply(@module, :timer, [socket.assigns.state])
+        {:noreply, assign(socket, state: new_state)}
       end
 
       def render(assigns) do
