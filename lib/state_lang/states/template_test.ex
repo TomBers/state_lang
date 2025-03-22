@@ -1,23 +1,23 @@
 defmodule StateLang.States.TemplateTest do
   use StateLangWeb, :live_view
 
-  @state %{"output" => "Red", "cycles" => 0}
+  @state %{output: "Red", cycles: 0}
 
   # State Red -> Orange -> Green -> Red * 5 then End
-  # State funcs
+  # State transition functions
   def change_state(%{cycles: cycles} = state, _) when cycles >= 5, do: %{state | output: "END"}
   def change_state(%{output: "Red"} = state, _), do: %{state | output: "Orange"}
   def change_state(%{output: "Orange"} = state, _), do: %{state | output: "Green"}
   def change_state(%{output: "Green"} = state, _), do: %{output: "Red", cycles: state.cycles + 1}
 
-  # Output funcs
+  # Output function
   def output_state(state), do: "#{state.output} [cycles: #{state.cycles}]"
 
   def render(assigns) do
     ~H"""
     <div>
       <p class="output-name">Current State:</p>
-      <p class="output-value">{apply(@module, :output_state, [@state])}</p>
+      <p class="output-value">{output_state(@state)}</p>
 
       <.button
         phx-click="change_state"
@@ -40,9 +40,9 @@ defmodule StateLang.States.TemplateTest do
 
   def state_machine do
     %{
-      "initial_state" => @state,
-      "module" => __MODULE__,
-      "transitions" => [
+      initial_state: @state,
+      module: __MODULE__,
+      transitions: [
         {"change_state", :change_state}
       ]
     }

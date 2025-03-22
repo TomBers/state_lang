@@ -3,11 +3,9 @@ defmodule FSMTemplateGenerator do
     quote bind_quoted: [prog: prog] do
       use StateLangWeb, :live_view
 
-      @initial_state prog["initial_state"]
-                     |> Enum.map(fn {key, value} -> {String.to_atom(key), value} end)
-                     |> Map.new()
-      @module prog["module"]
-      @transitions prog["transitions"]
+      @initial_state prog.initial_state
+      @module prog.module
+      @transitions prog.transitions
 
       def mount(_params, _session, socket) do
         {:ok,
@@ -20,19 +18,16 @@ defmodule FSMTemplateGenerator do
 
       for {transition_name, transition_atom} <- @transitions do
         def handle_event(unquote(transition_name), params, socket) do
-          IO.inspect(params, label: "Params")
           state = socket.assigns.state
 
           new_state = apply(@module, unquote(transition_atom), [state, params])
 
-          events =
-            [
-              "Pre-state: " <> Jason.encode!(state),
-              unquote(transition_name) <> " params: " <> Jason.encode!(params),
-              "Post-state: " <> Jason.encode!(new_state),
-              "---------------"
-            ]
-            |> Enum.reverse()
+          events = [
+            "---------------",
+            "Post-state: " <> Jason.encode!(new_state),
+            unquote(transition_name) <> " params: " <> Jason.encode!(params),
+            "Pre-state: " <> Jason.encode!(state)
+          ]
 
           {:noreply,
            assign(socket,
@@ -42,8 +37,8 @@ defmodule FSMTemplateGenerator do
         end
       end
 
-      def render(var!(assigns)) do
-        apply(@module, :render, [var!(assigns)])
+      def render(assigns) do
+        apply(@module, :render, [assigns])
       end
     end
   end
