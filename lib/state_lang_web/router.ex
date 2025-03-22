@@ -18,6 +18,8 @@ defmodule StateLangWeb.Router do
     pipe_through :browser
 
     live "/", StateLive
+    live "/todo", TodoLive
+    live "/traffic", TrafficLightsLive
   end
 
   # Other scopes may use custom stacks.

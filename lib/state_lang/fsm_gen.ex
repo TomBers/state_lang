@@ -17,7 +17,8 @@ defmodule FSMLiveGenerator do
            state: @initial_state,
            inputs: @inputs,
            outputs: @outputs,
-           module: @module
+           module: @module,
+           events: []
          )}
       end
 
@@ -27,7 +28,21 @@ defmodule FSMLiveGenerator do
           state = socket.assigns.state
 
           new_state = apply(@module, unquote(transition_atom), [state, params])
-          {:noreply, assign(socket, state: new_state)}
+
+          events =
+            [
+              "Pre-state: " <> Jason.encode!(state),
+              unquote(transition_name) <> " params: " <> Jason.encode!(params),
+              "Post-state: " <> Jason.encode!(new_state),
+              "---------------"
+            ]
+            |> Enum.reverse()
+
+          {:noreply,
+           assign(socket,
+             state: new_state,
+             events: events ++ socket.assigns.events
+           )}
         end
       end
 
@@ -35,8 +50,8 @@ defmodule FSMLiveGenerator do
         ~H"""
         <div>
           <%= for {name, _type, state_fn} <- @outputs do %>
-            <p>{name}</p>
-            <p>{apply(@module, state_fn, [@state])}</p>
+            <p class="output-name">{name}</p>
+            <p class="output-value">{apply(@module, state_fn, [@state])}</p>
           <% end %>
           <%= for comp <- @inputs do %>
             <%= case comp["type"] do %>
@@ -48,8 +63,7 @@ defmodule FSMLiveGenerator do
                     class={comp["style"]}
                     value={@state[comp["name"]]}
                     placeholder={comp["name"]}
-                  >
-                  </.input>
+                  />
                 </.simple_form>
               <% _ -> %>
                 <.button phx-click={comp["transition"]} class={comp["style"]}>
@@ -57,6 +71,14 @@ defmodule FSMLiveGenerator do
                 </.button>
             <% end %>
           <% end %>
+          <div class="events-container">
+            <h1>Events:</h1>
+            <ul>
+              <%= for event <- @events do %>
+                <li>{event}</li>
+              <% end %>
+            </ul>
+          </div>
         </div>
         """
       end
