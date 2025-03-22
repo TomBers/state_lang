@@ -11,6 +11,8 @@ defmodule StateLang.States.TemplateTest do
   def change_state(%{output: "Yellow"} = state, _), do: %{state | output: "Green"}
   def change_state(%{output: "Green"} = state, _), do: %{output: "Red", cycles: state.cycles + 1}
 
+  def message_call(state, _), do: state
+
   # Output function
   def output_state(state), do: "#{state.output} [cycles: #{state.cycles}]"
 
@@ -44,7 +46,7 @@ defmodule StateLang.States.TemplateTest do
       initial_state: @state,
       module: __MODULE__,
       transitions: [
-        {"change_state", :change_state}
+        "change_state"
       ]
     }
   end
