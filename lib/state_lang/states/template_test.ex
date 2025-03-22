@@ -5,9 +5,10 @@ defmodule StateLang.States.TemplateTest do
 
   # State Red -> Orange -> Green -> Red * 5 then End
   # State transition functions
-  def change_state(%{cycles: cycles} = state, _) when cycles >= 5, do: %{state | output: "END"}
+  def change_state(%{cycles: cycles} = state, _) when cycles >= 3, do: %{state | output: "END"}
   def change_state(%{output: "Red"} = state, _), do: %{state | output: "Orange"}
-  def change_state(%{output: "Orange"} = state, _), do: %{state | output: "Green"}
+  def change_state(%{output: "Orange"} = state, _), do: %{state | output: "Yellow"}
+  def change_state(%{output: "Yellow"} = state, _), do: %{state | output: "Green"}
   def change_state(%{output: "Green"} = state, _), do: %{output: "Red", cycles: state.cycles + 1}
 
   # Output function
