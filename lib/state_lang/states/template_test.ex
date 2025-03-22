@@ -1,4 +1,6 @@
 defmodule StateLang.States.TemplateTest do
+  use StateLangWeb, :live_view
+
   @state %{"output" => "Red", "cycles" => 0}
 
   # State Red -> Orange -> Green -> Red * 5 then End
@@ -10,6 +12,43 @@ defmodule StateLang.States.TemplateTest do
 
   # Output funcs
   def output_state(state), do: "#{state.output} [cycles: #{state.cycles}]"
+
+  def render(assigns) do
+    ~H"""
+    <div>
+      <%= for {name, _type, state_fn} <- @outputs do %>
+        <p class="output-name">{name}</p>
+        <p class="output-value">{apply(@module, state_fn, [@state])}</p>
+      <% end %>
+      <%= for comp <- @inputs do %>
+        <%= case comp["type"] do %>
+          <% "text" -> %>
+            <.simple_form for={%{}} phx-submit={comp["transition"]}>
+              <.input
+                type="text"
+                name={comp["name"]}
+                class={comp["style"]}
+                value={@state[comp["name"]]}
+                placeholder={comp["name"]}
+              />
+            </.simple_form>
+          <% _ -> %>
+            <.button phx-click={comp["transition"]} class={comp["style"]}>
+              {comp["name"]}
+            </.button>
+        <% end %>
+      <% end %>
+      <div class="events-container">
+        <h1>Events:</h1>
+        <ul>
+          <%= for event <- @events do %>
+            <li>{event}</li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+    """
+  end
 
   def state_machine do
     %{

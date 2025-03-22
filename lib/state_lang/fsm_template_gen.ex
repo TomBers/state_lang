@@ -47,41 +47,7 @@ defmodule FSMTemplateGenerator do
       end
 
       def render(var!(assigns)) do
-        ~H"""
-        <div>
-          <h1>Template Test Live</h1>
-          <%= for {name, _type, state_fn} <- @outputs do %>
-            <p class="output-name">{name}</p>
-            <p class="output-value">{apply(@module, state_fn, [@state])}</p>
-          <% end %>
-          <%= for comp <- @inputs do %>
-            <%= case comp["type"] do %>
-              <% "text" -> %>
-                <.simple_form for={%{}} phx-submit={comp["transition"]}>
-                  <.input
-                    type="text"
-                    name={comp["name"]}
-                    class={comp["style"]}
-                    value={@state[comp["name"]]}
-                    placeholder={comp["name"]}
-                  />
-                </.simple_form>
-              <% _ -> %>
-                <.button phx-click={comp["transition"]} class={comp["style"]}>
-                  {comp["name"]}
-                </.button>
-            <% end %>
-          <% end %>
-          <div class="events-container">
-            <h1>Events:</h1>
-            <ul>
-              <%= for event <- @events do %>
-                <li>{event}</li>
-              <% end %>
-            </ul>
-          </div>
-        </div>
-        """
+        apply(@module, :render, [var!(assigns)])
       end
     end
   end
