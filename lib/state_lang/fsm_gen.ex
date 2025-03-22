@@ -50,8 +50,8 @@ defmodule FSMLiveGenerator do
         ~H"""
         <div>
           <%= for {name, _type, state_fn} <- @outputs do %>
-            <p>{name}</p>
-            <p>{apply(@module, state_fn, [@state])}</p>
+            <p class="output-name">{name}</p>
+            <p class="output-value">{apply(@module, state_fn, [@state])}</p>
           <% end %>
           <%= for comp <- @inputs do %>
             <%= case comp["type"] do %>
@@ -71,12 +71,14 @@ defmodule FSMLiveGenerator do
                 </.button>
             <% end %>
           <% end %>
-          <h1>Events:</h1>
-          <ul>
-            <%= for event <- @events do %>
-              <li>{event}</li>
-            <% end %>
-          </ul>
+          <div class="events-container">
+            <h1>Events:</h1>
+            <ul>
+              <%= for event <- @events do %>
+                <li>{event}</li>
+              <% end %>
+            </ul>
+          </div>
         </div>
         """
       end

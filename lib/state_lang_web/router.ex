@@ -19,6 +19,7 @@ defmodule StateLangWeb.Router do
 
     live "/", StateLive
     live "/todo", TodoLive
+    live "/traffic", TrafficLightsLive
   end
 
   # Other scopes may use custom stacks.
