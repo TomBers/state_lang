@@ -97,7 +97,11 @@ defmodule StateLang.States.Todo do
                 if(todo.completed, do: "bg-green-500 border-green-500", else: "border-gray-300")
               ]}
             >
-              {if todo.completed, do: "✓"}
+              <%= if todo.completed do %>
+                ✓
+              <% else %>
+                ◻
+              <% end %>
             </button>
             <span class={[
               "flex-1",
@@ -119,6 +123,15 @@ defmodule StateLang.States.Todo do
       <%= if Enum.empty?(@state.todos) do %>
         <p class="text-center text-gray-500 mt-8">No todos yet!</p>
       <% end %>
+
+      <div class="events-container">
+        <h1>Events:</h1>
+        <ul>
+          <%= for event <- @events do %>
+            <li>{event}</li>
+          <% end %>
+        </ul>
+      </div>
     </div>
     """
   end
