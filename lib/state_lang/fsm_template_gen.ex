@@ -20,6 +20,52 @@ defmodule FSMTemplateGenerator do
 
   def generate_liveview_module(live_view_module, state_module) do
     prog = apply(state_module, :state_machine, [])
+    forms = Map.get(prog, :forms, [])
+
+    transition_handlers =
+      Enum.map(prog.transitions, fn transition ->
+        quote do
+          def handle_event(unquote(transition), params, socket) do
+            old_state = socket.assigns.state
+
+            new_state =
+              apply(@state_module, String.to_atom(unquote(transition)), [old_state, params])
+
+            updated_forms =
+              if old_state != new_state do
+                reset_forms_for_transition(socket.assigns.forms, unquote(transition))
+              else
+                socket.assigns.forms
+              end
+
+            events =
+              [
+                "#{String.upcase(unquote(transition))}: #{inspect(params)} -> #{inspect(new_state)}"
+                | socket.assigns.events
+              ]
+              |> Enum.take(10)
+
+            {:noreply, assign(socket, state: new_state, events: events, forms: updated_forms)}
+          end
+        end
+      end)
+
+    change_handlers =
+      Enum.map(forms, fn form_config ->
+        form_name = Map.get(form_config, "name", Map.get(form_config, :name, "unknown"))
+        change_event = "#{form_name}_change"
+
+        quote do
+          def handle_event(unquote(change_event), params, socket) do
+            form_params = Map.get(params, unquote(form_name), %{})
+
+            updated_forms =
+              update_form_in_assigns(socket.assigns.forms, unquote(form_name), form_params)
+
+            {:noreply, assign(socket, forms: updated_forms)}
+          end
+        end
+      end)
 
     contents =
       quote do
@@ -30,6 +76,7 @@ defmodule FSMTemplateGenerator do
         @initial_state unquote(Macro.escape(prog.initial_state))
         @transitions unquote(prog.transitions)
         @timer_interval unquote(prog.timer_interval)
+        @form_configs unquote(Macro.escape(forms))
 
         def mount(_params, _session, socket) do
           if connected?(socket) do
@@ -37,31 +84,35 @@ defmodule FSMTemplateGenerator do
             :timer.send_interval(@timer_interval, self(), :tick)
           end
 
-          {:ok, assign(socket, state: @initial_state, events: [])}
+          # Initialize forms from state
+          initial_forms = initialize_forms_from_state(@initial_state)
+
+          {:ok,
+           assign(socket,
+             state: @initial_state,
+             events: [],
+             forms: initial_forms
+           )}
         end
 
-        # Generate all transition handlers dynamically
-        for transition <- @transitions do
-          def handle_event(transition, params, socket) do
-            new_state =
-              apply(@state_module, String.to_atom(transition), [
-                socket.assigns.state,
-                params
-              ])
+        # Generate transition handlers first
+        unquote_splicing(transition_handlers)
 
-            events =
-              [
-                "#{String.upcase(transition)}: #{Jason.encode!(params)} -> #{Jason.encode!(new_state)}"
-                | socket.assigns.events
-              ]
-              # Keep only last 10 events
-              |> Enum.take(10)
+        # Generate explicit form change handlers
+        unquote_splicing(change_handlers)
 
-            {:noreply, assign(socket, state: new_state, events: events)}
-          end
+        # Catch-all for unhandled events
+        def handle_event(event_name, params, socket) do
+          events =
+            [
+              "UNHANDLED EVENT: #{event_name} with params: #{inspect(params)}"
+              | socket.assigns.events
+            ]
+            |> Enum.take(10)
+
+          {:noreply, assign(socket, events: events)}
         end
 
-        # Simplified message and timer handlers
         def handle_info({:message, params}, socket) do
           new_state = apply(@state_module, :message_call, [socket.assigns.state, params])
           {:noreply, assign(socket, state: new_state)}
@@ -74,6 +125,79 @@ defmodule FSMTemplateGenerator do
 
         def render(assigns) do
           apply(@state_module, :render, [assigns])
+        end
+
+        # Helper functions
+        defp initialize_forms_from_state(state) do
+          Enum.map(@form_configs, fn config ->
+            form_name = get_form_name(config)
+            initial_data = get_form_initial_data(config, state)
+
+            %{
+              name: form_name,
+              config: config,
+              form: to_form(initial_data, as: form_name)
+            }
+          end)
+        end
+
+        defp get_form_name(config) do
+          Map.get(config, "name", Map.get(config, :name))
+        end
+
+        defp get_form_initial_data(config, state) do
+          cond do
+            Map.has_key?(config, "initial_data") ->
+              Map.get(config, "initial_data")
+
+            Map.has_key?(config, :initial_data) ->
+              Map.get(config, :initial_data)
+
+            Map.has_key?(config, "reset_data") ->
+              Map.get(config, "reset_data")
+
+            Map.has_key?(config, :reset_data) ->
+              Map.get(config, :reset_data)
+
+            true ->
+              %{}
+          end
+        end
+
+        defp update_form_in_assigns(forms, form_name, params) do
+          Enum.map(forms, fn form ->
+            if form.name == form_name do
+              %{form | form: to_form(params, as: form_name)}
+            else
+              form
+            end
+          end)
+        end
+
+        defp get_form_by_name(forms, name) do
+          Enum.find(forms, &(&1.name == name))
+        end
+
+        defp reset_forms_for_transition(forms, transition) do
+          Enum.map(forms, fn form ->
+            submit_event = get_submit_event(form.config)
+
+            if submit_event == transition do
+              # This form submitted to this transition, reset it
+              reset_data = get_form_reset_data(form.config)
+              %{form | form: to_form(reset_data, as: form.name)}
+            else
+              form
+            end
+          end)
+        end
+
+        defp get_submit_event(config) do
+          Map.get(config, "submit_event", Map.get(config, :submit_event))
+        end
+
+        defp get_form_reset_data(config) do
+          Map.get(config, "reset_data", Map.get(config, :reset_data, %{}))
         end
       end
 
