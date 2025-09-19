@@ -20,12 +20,14 @@ defmodule StateLangWeb.Router do
     live "/", StateLive
     live "/todo", TodoLive
     live "/traffic", TrafficLightsLive
+    live "/template", TemplateTestLive
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", StateLangWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", StateLangWeb do
+    pipe_through :api
+    get "/fsm/:topic", PageController, :index
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:state_lang, :dev_routes) do
