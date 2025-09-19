@@ -6,7 +6,6 @@ defmodule FSMTemplateGenerator do
   end
 
   def __after_compile__(env, _) do
-    # Convert StateLang.States.TemplateTest -> StateLangWeb.TemplateTestLive
     live_view_module = state_to_live_module(env.module)
     generate_liveview_module(live_view_module, env.module)
   end
@@ -27,70 +26,54 @@ defmodule FSMTemplateGenerator do
         use StateLangWeb, :live_view
         alias Phoenix.PubSub
 
+        @state_module unquote(state_module)
         @initial_state unquote(Macro.escape(prog.initial_state))
-        @module unquote(prog.module)
         @transitions unquote(prog.transitions)
         @timer_interval unquote(prog.timer_interval)
 
         def mount(_params, _session, socket) do
           if connected?(socket) do
-            # TOD0 Check if timer_interval set
-            if @timer_interval do
-              PubSub.subscribe(StateLang.PubSub, "#{@module}")
-              :timer.send_interval(@timer_interval, self(), :tick)
-            end
+            PubSub.subscribe(StateLang.PubSub, "#{@state_module}")
+            :timer.send_interval(@timer_interval, self(), :tick)
           end
 
-          {:ok,
-           assign(socket,
-             state: @initial_state,
-             module: @module,
-             events: []
-           )}
+          {:ok, assign(socket, state: @initial_state, events: [])}
         end
 
-        for transition_name <- @transitions do
-          def handle_event(transition_name, params, socket) do
-            state = socket.assigns.state
-
+        # Generate all transition handlers dynamically
+        for transition <- @transitions do
+          def handle_event(transition, params, socket) do
             new_state =
-              apply(@module, transition_name |> String.to_atom(), [state, params])
+              apply(@state_module, String.to_atom(transition), [
+                socket.assigns.state,
+                params
+              ])
 
-            events = [
-              "---------------",
-              "Post-state: " <> Jason.encode!(new_state),
-              String.upcase(transition_name) <> " params: " <> Jason.encode!(params),
-              "Pre-state: " <> Jason.encode!(state)
-            ]
+            events =
+              [
+                "#{String.upcase(transition)}: #{Jason.encode!(params)} -> #{Jason.encode!(new_state)}"
+                | socket.assigns.events
+              ]
+              # Keep only last 10 events
+              |> Enum.take(10)
 
-            {:noreply,
-             assign(socket,
-               state: new_state,
-               events: events ++ socket.assigns.events
-             )}
+            {:noreply, assign(socket, state: new_state, events: events)}
           end
         end
 
+        # Simplified message and timer handlers
         def handle_info({:message, params}, socket) do
-          new_state = apply(@module, :message_call, [socket.assigns.state, params])
-
-          events = [
-            "---------------",
-            "Post-state: " <> Jason.encode!(new_state),
-            "MSG RECEIVED params: " <> Jason.encode!(params),
-            "Pre-state: " <> Jason.encode!(socket.assigns.state)
-          ]
-
-          {:noreply, assign(socket, state: new_state, events: events ++ socket.assigns.events)}
+          new_state = apply(@state_module, :message_call, [socket.assigns.state, params])
+          {:noreply, assign(socket, state: new_state)}
         end
 
         def handle_info(:tick, socket) do
-          new_state = apply(@module, :timer, [socket.assigns.state])
+          new_state = apply(@state_module, :timer, [socket.assigns.state])
           {:noreply, assign(socket, state: new_state)}
         end
 
         def render(assigns) do
-          apply(@module, :render, [assigns])
+          apply(@state_module, :render, [assigns])
         end
       end
 
