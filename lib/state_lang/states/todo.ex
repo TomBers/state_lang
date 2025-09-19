@@ -1,4 +1,7 @@
 defmodule StateLang.States.Todo do
+  use StateLangWeb, :live_view
+  use FSMTemplateGenerator
+
   @state %{"todos" => []}
   # State funcs
   def add_note(state, params), do: %{state | todos: state.todos ++ [Map.get(params, "Todo")]}
@@ -7,25 +10,26 @@ defmodule StateLang.States.Todo do
 
   def state_machine do
     %{
-      "initial_state" => @state,
-      "module" => __MODULE__,
-      "inputs" => [
+      initial_state: @state,
+      module: __MODULE__,
+      inputs: [
         %{
           "name" => "Todo",
           "transition" => "add_note",
           "type" => "text"
         }
       ],
-      "outputs" => [
+      outputs: [
         {
           "Todos",
           "list",
           :todo_state
         }
       ],
-      "transitions" => [
+      transitions: [
         {"add_note", :add_note}
-      ]
+      ],
+      timer_interval: 5000
     }
   end
 end

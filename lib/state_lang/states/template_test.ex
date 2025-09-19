@@ -1,5 +1,6 @@
 defmodule StateLang.States.TemplateTest do
   use StateLangWeb, :live_view
+  use FSMTemplateGenerator
 
   @state %{output: "Red", cycles: 0, count: 0}
 
