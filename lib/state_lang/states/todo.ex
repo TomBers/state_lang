@@ -62,7 +62,6 @@ defmodule StateLang.States.Todo do
   def state_machine do
     %{
       initial_state: @state,
-      # Fixed: was **MODULE**
       module: __MODULE__,
       transitions: [
         "add_note",
