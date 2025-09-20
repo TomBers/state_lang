@@ -12,18 +12,20 @@ defmodule StateLang.States.BasicTodo do
     state.todos |> Enum.join(",")
   end
 
+  def todo_form do
+    %{
+      name: "todo_form",
+      submit_event: "add_todo",
+      change_event: "todo_form_change",
+      data: %{"text" => ""}
+    }
+  end
+
   def state_machine do
     %{
       initial_state: @state,
       transitions: ["add_todo"],
-      forms: [
-        %{
-          name: "todo_form",
-          submit_event: "add_todo",
-          change_event: "todo_form_change",
-          data: %{"text" => ""}
-        }
-      ]
+      forms: [todo_form()]
     }
   end
 end

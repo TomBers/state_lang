@@ -150,14 +150,8 @@ defmodule FSMTemplateGenerator do
             Map.has_key?(config, "initial_data") ->
               Map.get(config, "initial_data")
 
-            Map.has_key?(config, :initial_data) ->
-              Map.get(config, :initial_data)
-
             Map.has_key?(config, "data") ->
               Map.get(config, "data")
-
-            Map.has_key?(config, :data) ->
-              Map.get(config, :data)
 
             true ->
               %{}
