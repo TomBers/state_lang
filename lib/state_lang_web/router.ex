@@ -19,6 +19,7 @@ defmodule StateLangWeb.Router do
 
     live "/", StateLive
     live "/todo", TodoLive
+    live "/basic_todo", BasicTodoLive
     live "/traffic", TrafficLightsLive
     live "/template", TemplateTestLive
   end

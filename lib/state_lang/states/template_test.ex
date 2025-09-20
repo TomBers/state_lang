@@ -1,5 +1,6 @@
 defmodule StateLang.States.TemplateTest do
   use StateLangWeb, :live_view
+  use FSMTemplateGenerator
 
   @state %{output: "Red", cycles: 0, count: 0}
 
@@ -50,7 +51,6 @@ defmodule StateLang.States.TemplateTest do
   def state_machine do
     %{
       initial_state: @state,
-      module: __MODULE__,
       transitions: [
         "change_state"
       ],
