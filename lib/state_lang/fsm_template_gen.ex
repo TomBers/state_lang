@@ -75,11 +75,14 @@ defmodule FSMTemplateGenerator do
         @state_module unquote(state_module)
         @initial_state unquote(Macro.escape(prog.initial_state))
         @transitions unquote(prog.transitions)
-        @timer_interval unquote(prog.timer_interval)
+        @timer_interval unquote(Macro.escape(Map.get(prog, :timer_interval)))
         @form_configs unquote(Macro.escape(forms))
 
         def mount(_params, _session, socket) do
-          if connected?(socket) do
+          IO.inspect(__MODULE__, label: "Module")
+          IO.inspect(@state_module, label: "State Module")
+
+          if @timer_interval && connected?(socket) do
             PubSub.subscribe(StateLang.PubSub, "#{@state_module}")
             :timer.send_interval(@timer_interval, self(), :tick)
           end

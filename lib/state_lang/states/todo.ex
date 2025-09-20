@@ -43,21 +43,14 @@ defmodule StateLang.States.Todo do
     "#{completed}/#{length(state.todos)} completed"
   end
 
-  def get_todo_form(forms) do
-    Enum.find(forms, &(&1.name == "todo_form"))
-  end
-
   def state_machine do
     %{
       initial_state: @state,
-      module: __MODULE__,
       transitions: ["add_todo", "toggle_todo", "delete_todo"],
-      timer_interval: 5_000_000,
       forms: [
         %{
           name: "todo_form",
           submit_event: "add_todo",
-          # Data to reset form to after successful submit
           reset_data: %{"text" => ""}
         }
       ]
@@ -70,7 +63,7 @@ defmodule StateLang.States.Todo do
       <h1 class="text-2xl font-bold mb-4">Todo List</h1>
       <div class="mb-4 text-sm text-gray-600">{todo_stats(@state)}</div>
 
-      <%= if todo_form = get_todo_form(@forms) do %>
+      <%= if todo_form = Enum.find(@forms, &(&1.name == "todo_form")) do %>
         <.simple_form
           for={todo_form.form}
           phx-submit={todo_form.config.submit_event}
