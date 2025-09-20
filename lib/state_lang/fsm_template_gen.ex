@@ -79,9 +79,6 @@ defmodule FSMTemplateGenerator do
         @form_configs unquote(Macro.escape(forms))
 
         def mount(_params, _session, socket) do
-          IO.inspect(__MODULE__, label: "Module")
-          IO.inspect(@state_module, label: "State Module")
-
           if @timer_interval && connected?(socket) do
             PubSub.subscribe(StateLang.PubSub, "#{@state_module}")
             :timer.send_interval(@timer_interval, self(), :tick)
@@ -156,11 +153,11 @@ defmodule FSMTemplateGenerator do
             Map.has_key?(config, :initial_data) ->
               Map.get(config, :initial_data)
 
-            Map.has_key?(config, "reset_data") ->
-              Map.get(config, "reset_data")
+            Map.has_key?(config, "data") ->
+              Map.get(config, "data")
 
-            Map.has_key?(config, :reset_data) ->
-              Map.get(config, :reset_data)
+            Map.has_key?(config, :data) ->
+              Map.get(config, :data)
 
             true ->
               %{}
@@ -187,8 +184,8 @@ defmodule FSMTemplateGenerator do
 
             if submit_event == transition do
               # This form submitted to this transition, reset it
-              reset_data = get_form_reset_data(form.config)
-              %{form | form: to_form(reset_data, as: form.name)}
+              data = get_form_data(form.config)
+              %{form | form: to_form(data, as: form.name)}
             else
               form
             end
@@ -199,8 +196,8 @@ defmodule FSMTemplateGenerator do
           Map.get(config, "submit_event", Map.get(config, :submit_event))
         end
 
-        defp get_form_reset_data(config) do
-          Map.get(config, "reset_data", Map.get(config, :reset_data, %{}))
+        defp get_form_data(config) do
+          Map.get(config, "data", Map.get(config, :data, %{}))
         end
       end
 

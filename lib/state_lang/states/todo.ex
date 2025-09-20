@@ -51,7 +51,7 @@ defmodule StateLang.States.Todo do
         %{
           name: "todo_form",
           submit_event: "add_todo",
-          reset_data: %{"text" => ""}
+          data: %{"text" => ""}
         }
       ]
     }
