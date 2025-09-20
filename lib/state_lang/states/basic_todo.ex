@@ -16,7 +16,6 @@ defmodule StateLang.States.BasicTodo do
     %{
       name: "todo_form",
       submit_event: "add_todo",
-      change_event: "todo_form_change",
       data: %{"text" => ""}
     }
   end

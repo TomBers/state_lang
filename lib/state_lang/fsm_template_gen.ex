@@ -1,4 +1,13 @@
 defmodule FSMTemplateGenerator do
+  @moduledoc ~S"""
+  Generates a LiveView module from a state module and wires up generic form change handlers.
+
+  Key behaviors:
+  - For each form in the `state_machine/0` spec, a change handler is generated with the event name "#{form_name}_change".
+  - Each form config is augmented to include `:change_event` (if not provided), so templates can use `phx-change={form.config[:change_event]}`.
+  - On submit, when the state changes, the submitted form is reset to its initial `:data` and the submitted params are stored in `:last_submitted_params`.
+  - The next change event that matches `:last_submitted_params` is ignored to prevent the just-submitted values from repopulating the form input.
+  """
   defmacro __using__(_opts) do
     quote do
       @after_compile FSMTemplateGenerator
@@ -33,7 +42,7 @@ defmodule FSMTemplateGenerator do
 
             updated_forms =
               if old_state != new_state do
-                reset_forms_for_transition(socket.assigns.forms, unquote(transition))
+                reset_forms_for_transition(socket.assigns.forms, unquote(transition), params)
               else
                 socket.assigns.forms
               end
@@ -52,7 +61,7 @@ defmodule FSMTemplateGenerator do
 
     change_handlers =
       Enum.map(forms, fn form_config ->
-        form_name = Map.get(form_config, "name", Map.get(form_config, :name, "unknown"))
+        form_name = Map.get(form_config, :name, "unknown")
         change_event = "#{form_name}_change"
 
         quote do
@@ -132,38 +141,53 @@ defmodule FSMTemplateGenerator do
           Enum.map(@form_configs, fn config ->
             form_name = get_form_name(config)
             initial_data = get_form_initial_data(config, state)
+            config_with_change = ensure_change_event(config, form_name)
 
             %{
               name: form_name,
-              config: config,
-              form: to_form(initial_data, as: form_name)
+              config: config_with_change,
+              form: to_form(initial_data, as: form_name),
+              last_submitted_params: nil
             }
           end)
         end
 
         defp get_form_name(config) do
-          Map.get(config, "name", Map.get(config, :name))
+          Map.get(config, :name)
         end
 
         defp get_form_initial_data(config, state) do
           cond do
-            Map.has_key?(config, "initial_data") ->
-              Map.get(config, "initial_data")
+            Map.has_key?(config, :initial_data) ->
+              Map.get(config, :initial_data)
 
-            Map.has_key?(config, "data") ->
-              Map.get(config, "data")
+            Map.has_key?(config, :data) ->
+              Map.get(config, :data)
 
             true ->
               %{}
           end
         end
 
+        defp ensure_change_event(config, form_name) do
+          existing = Map.get(config, :change_event)
+          change = existing || "#{form_name}_change"
+
+          Map.put_new(config, :change_event, change)
+        end
+
         defp update_form_in_assigns(forms, form_name, params) do
           Enum.map(forms, fn form ->
-            if form.name == form_name do
-              %{form | form: to_form(params, as: form_name)}
-            else
-              form
+            cond do
+              form.name == form_name and Map.get(form, :last_submitted_params) == params ->
+                # Ignore stale change matching the last submitted params
+                %{form | last_submitted_params: nil}
+
+              form.name == form_name ->
+                %{form | form: to_form(params, as: form_name)}
+
+              true ->
+                form
             end
           end)
         end
@@ -172,14 +196,14 @@ defmodule FSMTemplateGenerator do
           Enum.find(forms, &(&1.name == name))
         end
 
-        defp reset_forms_for_transition(forms, transition) do
+        defp reset_forms_for_transition(forms, transition, params) do
           Enum.map(forms, fn form ->
             submit_event = get_submit_event(form.config)
 
             if submit_event == transition do
-              # This form submitted to this transition, reset it
               data = get_form_data(form.config)
-              %{form | form: to_form(data, as: form.name)}
+              submitted = Map.get(params, form.name, %{})
+              %{form | form: to_form(data, as: form.name), last_submitted_params: submitted}
             else
               form
             end
@@ -187,11 +211,11 @@ defmodule FSMTemplateGenerator do
         end
 
         defp get_submit_event(config) do
-          Map.get(config, "submit_event", Map.get(config, :submit_event))
+          Map.get(config, :submit_event)
         end
 
         defp get_form_data(config) do
-          Map.get(config, "data", Map.get(config, :data, %{}))
+          Map.get(config, :data, %{})
         end
       end
 

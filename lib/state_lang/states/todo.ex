@@ -64,12 +64,7 @@ defmodule StateLang.States.Todo do
       <div class="mb-4 text-sm text-gray-600">{todo_stats(@state)}</div>
 
       <%= if todo_form = Enum.find(@forms, &(&1.name == "todo_form")) do %>
-        <.simple_form
-          for={todo_form.form}
-          phx-submit={todo_form.config.submit_event}
-          phx-change={"#{todo_form.name}_change"}
-          class="mb-6"
-        >
+        <.simple_form for={todo_form.form} phx-submit={todo_form.config[:submit_event]} class="mb-6">
           <div class="flex gap-2">
             <.input field={todo_form.form[:text]} placeholder="Add a new todo" class="flex-1" />
             <.button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
