@@ -2,10 +2,18 @@ defmodule StateLangWeb.Router do
   use StateLangWeb, :router
 
   pipeline :browser do
-    plug :accepts, ["html"]
+    plug :accepts, [
+      "html",
+      "swiftui"
+    ]
+
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, html: {StateLangWeb.Layouts, :root}
+
+    plug :put_root_layout,
+      html: {StateLangWeb.Layouts, :root},
+      swiftui: {StateLangWeb.Layouts.SwiftUI, :root}
+
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -17,7 +25,8 @@ defmodule StateLangWeb.Router do
   scope "/", StateLangWeb do
     pipe_through :browser
 
-    live "/", StateLive
+    # live "/", StateLive
+    live "/", HomeLive
     live "/todo", TodoLive
     live "/basic_todo", BasicTodoLive
     live "/traffic", TrafficLightsLive
